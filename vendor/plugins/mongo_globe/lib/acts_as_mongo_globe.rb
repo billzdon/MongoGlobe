@@ -55,7 +55,7 @@ module MongoMapper
               json = self.to_json_without_linked_details
               
               object_hash.each_pair do |key, value|
-                json = json.split("\"#{value.class.to_s.downcase}_id\":\"#{key}\"").join("\"#{value.class.to_s.downcase}\":#{value.to_json},\"#{value.class.to_s.downcase}_id\":\"#{key}\"")
+                json.gsub!("\"#{value.class.to_s.downcase}_id\":\"#{key}\"","\"#{value.class.to_s.downcase}\":#{value.to_json},\"#{value.class.to_s.downcase}_id\":\"#{key}\"")
               end
               
               json
