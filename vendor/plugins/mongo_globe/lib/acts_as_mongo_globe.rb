@@ -49,6 +49,16 @@ module MongoMapper
           self.send("#{field}=".to_sym, value)
         end
         
+        def atomic_push(field, value)
+          self._root_document.set(hierarchy_string + ".#{field}" => value)
+          self.send("#{field}".to_sym).send(:<<, value)
+        end
+        
+        def atomic_pull(field, value)
+          self._root_document.set(hierarchy_string + ".#{field}" => value)
+          self.send("#{field}".to_sym).send(:delete, value)
+        end
+        
           def to_json_with_linked_details(*args)   
               object_hash = deep_belongs_to
               
