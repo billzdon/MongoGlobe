@@ -7,4 +7,6 @@ class ThingReference
   belongs_to :thing
   
   key :name, String
+  
+  atomicize :name
 end

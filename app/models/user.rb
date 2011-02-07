@@ -13,4 +13,6 @@ class User
     end
   end
   
+  atomicize :thing_references
+  
 end

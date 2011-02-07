@@ -50,12 +50,12 @@ module MongoMapper
         end
         
         def atomic_push(field, value)
-          self._root_document.set(hierarchy_string + ".#{field}" => value)
+          self._root_document.push(hierarchy_string + ".#{field}" => JSON.parse(value.to_json))
           self.send("#{field}".to_sym).send(:<<, value)
         end
         
         def atomic_pull(field, value)
-          self._root_document.set(hierarchy_string + ".#{field}" => value)
+          self._root_document.pull(hierarchy_string + ".#{field}" => JSON.parse(value.to_json))
           self.send("#{field}".to_sym).send(:delete, value)
         end
         
@@ -121,6 +121,31 @@ module MongoMapper
               self.detect {|_object| _object.id.to_s == _id.to_s}
           end 
           
+        end
+        
+        def many_relationship?(_relationship)
+          !keys.keys.include?(_relationship.to_s) && associations.fetch(_relationship).type == :many
+        end
+        
+        def atomicize(field, options = {})
+          field.is_a?(Array) ? field.each {|f| _atomicize(f, options)} : _atomicize(field, options)
+        end
+        
+        private
+        
+        def _atomicize(field, options = {})
+          if many_relationship?(field)
+            define_method("#{field}_include") do |_field|
+              atomic_push(field, _field)
+            end
+            define_method("#{field}_exclude") do |_field|
+              atomic_pull(field, _field)
+            end
+          else
+            define_method("#{field}_is") do |_field|
+              atomic_set(field, _field)
+            end
+          end
         end
         
       end
