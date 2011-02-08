@@ -4,13 +4,13 @@ module MongoMapper
     module MongoGlobe
       
       def self.included(base)
-        base.extend ClassMethods
+        base.extend GlobeClassMethods
       end
       
-      module ClassMethods
+      module GlobeClassMethods
         def acts_as_mongo_globe(options = {})
-          include MongoMapper::Acts::MongoGlobe::InstanceMethods
-          extend MongoMapper::Acts::MongoGlobe::SingletonMethods
+          include MongoMapper::Acts::MongoGlobe::GlobeInstanceMethods
+          extend MongoMapper::Acts::MongoGlobe::GlobeSingletonMethods
           
           alias_method_chain :to_json, :linked_details
           class << self
@@ -21,7 +21,7 @@ module MongoMapper
         
       end
       
-      module InstanceMethods
+      module GlobeInstanceMethods
         def parent_index
           self._parent_document.send("#{self.class.to_s.underscore.pluralize}").each_with_index do |_object, index|
             return index if _object == self
@@ -109,7 +109,7 @@ module MongoMapper
           end
       end
       
-      module SingletonMethods
+      module GlobeSingletonMethods
         def many_with_auto_extensions(association_id, options={}, &extension) 
      
           many_without_auto_extensions(association_id, options={}, &extension)
