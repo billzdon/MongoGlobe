@@ -80,8 +80,23 @@ module MongoMapper
           many_objects.each do |many_object|
             object_hash.merge!(many_object.deep_belongs_to)
           end
+          one_objects.each do |one_object|
+            object_hash.merge!(one_object.deep_belongs_to)
+          end
           
           return object_hash
+        end
+        
+        def one_associations
+          self.associations.select do |association, association_object|
+            association_object.type == :one
+          end
+        end
+        
+        def one_objects
+          one_associations.collect do |one_association|
+            self.send(one_association.first.to_sym)
+          end.flatten
         end
         
         def many_associations
