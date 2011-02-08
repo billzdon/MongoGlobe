@@ -59,54 +59,54 @@ module MongoMapper
           self.send("#{field}".to_sym).send(:delete, value)
         end
         
-          def to_json_with_linked_details(*args)   
-              object_hash = deep_belongs_to
-              
-              json = self.to_json_without_linked_details
-              
-              object_hash.each_pair do |key, value|
-                json.gsub!("\"#{value.class.to_s.downcase}_id\":\"#{key}\"","\"#{value.class.to_s.downcase}\":#{value.to_json},\"#{value.class.to_s.downcase}_id\":\"#{key}\"")
-              end
-              
-              json
-          end
-          
-          def deep_belongs_to
-            object_hash = {}
+        def to_json_with_linked_details(*args)   
+            object_hash = deep_belongs_to
             
-            belongs_to_objects.each do |belongs_to_object|
-              object_hash[belongs_to_object.id.to_s] = belongs_to_object
-            end
-            many_objects.each do |many_object|
-              object_hash.merge!(many_object.deep_belongs_to)
+            json = self.to_json_without_linked_details
+            
+            object_hash.each_pair do |key, value|
+              json.gsub!("\"#{value.class.to_s.downcase}_id\":\"#{key}\"","\"#{value.class.to_s.downcase}\":#{value.to_json},\"#{value.class.to_s.downcase}_id\":\"#{key}\"")
             end
             
-            return object_hash
+            json
+        end
+        
+        def deep_belongs_to
+          object_hash = {}
+          
+          belongs_to_objects.each do |belongs_to_object|
+            object_hash[belongs_to_object.id.to_s] = belongs_to_object
+          end
+          many_objects.each do |many_object|
+            object_hash.merge!(many_object.deep_belongs_to)
           end
           
-          def many_associations
-            self.associations.select do |association, association_object|
-              association_object.type == :many
-            end
+          return object_hash
+        end
+        
+        def many_associations
+          self.associations.select do |association, association_object|
+            association_object.type == :many
           end
-          
-          def many_objects
-            many_associations.collect do |many_association|
-              self.send(many_association.first.to_sym)
-            end.flatten
+        end
+        
+        def many_objects
+          many_associations.collect do |many_association|
+            self.send(many_association.first.to_sym)
+          end.flatten
+        end
+        
+        def belongs_to_associations 
+          self.associations.select do |association, association_object|
+            association_object.type == :belongs_to
           end
-          
-          def belongs_to_associations 
-            self.associations.select do |association, association_object|
-              association_object.type == :belongs_to
-            end
-          end
-          
-          def belongs_to_objects
-            belongs_to_associations.collect do |belongs_to_association|
-               self.send(belongs_to_association.first.to_sym)
-            end.flatten
-          end
+        end
+        
+        def belongs_to_objects
+          belongs_to_associations.collect do |belongs_to_association|
+             self.send(belongs_to_association.first.to_sym)
+          end.flatten
+        end
       end
       
       module GlobeSingletonMethods
@@ -116,6 +116,9 @@ module MongoMapper
           # many does not return the association object, so we have to fetch
           
           association = associations.fetch(association_id)
+          
+          # if there are no associations already we need to create the proxy module
+          association.options[:extend] = [Module.new] if association.options[:extend].first.nil?
 
           association.options[:extend].first.send(:define_method, "find_by_#{association_id.to_s[0, association_id.to_s.length - 1]}_id".to_sym) do |_id|
               self.detect {|_object| _object.id.to_s == _id.to_s}
